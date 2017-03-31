@@ -1,16 +1,9 @@
 import Data.List
 import System.IO
 
--- Utilities
-orElse :: Maybe a -> Maybe a -> Maybe a
-orElse Nothing  x  = x
-orElse (Just a) _  = Just a
 
-mmap :: (a -> b) -> Maybe a -> Maybe b
-mmap f  Nothing  = Nothing
-mmap f (Just x)  = Just (f x)
---
 
+-- pretty self explanatory
 substitute :: Eq a => a -> [a] -> [a] -> [a]
 substitute _ [] _ = []
 substitute w (x:xs) repl
@@ -18,7 +11,8 @@ substitute w (x:xs) repl
   | otherwise = (x : substitute w xs repl)
 
 
-
+-- Almost word for word implementation from the website
+-- very hard.
 match :: Eq a => a -> [a] -> [a] -> Maybe [a]
 match _ [] [] = Just []
 match _ [] _ = Nothing
@@ -36,5 +30,24 @@ singleWildcardMatch (w:xs) (y:ys)
 longerWildcardMatch :: Eq a => [a] -> [a] -> Maybe [a]
 longerWildcardMatch (w:xs) (y:ys) = mmap (y :) (match w (w:xs) ys)
 
+
+-- Main
 main = print $ match '*' "* and *" "you and me"
 
+
+--
+
+-- MARK Utilities
+
+-- Return the first thing if it's not Nothing, otherwise return the second.
+orElse :: Maybe a -> Maybe a -> Maybe a
+orElse Nothing  x  = x
+orElse (Just a) _  = Just a
+
+-- misleading name (maybe-map)?
+-- It just applies f to the Maybe if it's not nothing.
+-- should be called mapply or something
+mmap :: (a -> b) -> Maybe a -> Maybe b
+mmap f  Nothing  = Nothing
+mmap f (Just x)  = Just (f x)
+-- /Utilities
