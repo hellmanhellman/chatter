@@ -32,10 +32,14 @@ stateOfMind brain = do
   return (\x -> [unwords (rulesApply phrasePairs x)])
 
 --Some help-methods for making Strings/Phrases lower case.
+sToLower :: String -> String
 sToLower = map toLower
+
+pToLower :: Phrase -> Phrase
 pToLower = map sToLower
 
 --Converts the input phrase to lower case. The response phrase is unaffected.
+ppsToLower :: [(Phrase, Phrase)] -> [(Phrase, Phrase)]
 ppsToLower = map (map2 (pToLower, id))
 
 --Takes a list of pattern transformations and a phrase as arguments. Returns a transformed phrase.
