@@ -48,10 +48,9 @@ ppsToLower = map (map2 (pToLower, id))
 -- Takes a list of pattern transformations and a phrase as arguments.
 -- Returns a reflected transformed phrase.
 rulesApply :: [PhrasePair] -> Phrase -> Phrase
-rulesApply transformations phrase
-  | result == Nothing    = []
-  | otherwise            = try (transformationsApply "*" reflect transformations) phrase
-  where result = transformationsApply "*" reflect transformations phrase
+rulesApply transformations = maybe [] id . (transformationsApply "*" reflect transformations)
+
+
 
 -- "Reflects" words of a phrase, e.g. replaces "me" with "you". If a word has no reflection, it remains unchanged.
 reflect :: Phrase -> Phrase
@@ -122,8 +121,7 @@ reduce = reductionsApply reductions
 -- Reduces a phrase as much as possible according to the rules above.
 -- This is basically a recursive rulesApply.
 reductionsApply :: [PhrasePair] -> Phrase -> Phrase
-reductionsApply reductions phrase = fix reduction phrase
-  where reduction = try (transformationsApply "*" id reductions)
+reductionsApply = fix . try . transformationsApply "*" id
 
 
 -------------------------------------------------------
@@ -159,19 +157,6 @@ singleWildcardMatch (w:xs) (y:ys)
 
 longerWildcardMatch (w:xs) (y:ys) = mmap (y :) (match w (w:xs) ys)
 
-
-
--- Test cases --------------------
-
-testPattern =  "a=*;"
-testSubstitutions = "32"
-testString = "a=32;"
-
-substituteTest = substitute '*' testPattern testSubstitutions
-substituteCheck = substituteTest == testString
-
-matchTest = match '*' testPattern testString
-matchCheck = matchTest == Just testSubstitutions
 
 
 
