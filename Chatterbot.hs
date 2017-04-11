@@ -25,40 +25,43 @@ type BotBrain = [(Phrase, [Phrase])]
 
 --------------------------------------------------------
 
+-- Condenses (randomly) the possible phrase matchings in a bot brain,
+-- so each phrase pattern matches only one reponse. Returns a function
+-- which applied to a phrase returns the matching response (as a phrase).
 stateOfMind :: BotBrain -> IO (Phrase -> Phrase)
 stateOfMind brain = do
   i <- randomIO :: IO Float
   let phrasePairs = ppsToLower (map (map2 (id, (pick i))) brain)
   return (\x -> [unwords (rulesApply phrasePairs x)])
 
---Some help-methods for making Strings/Phrases lower case.
+-- Some help-methods for making Strings/Phrases lower case.
 sToLower :: String -> String
 sToLower = map toLower
 
 pToLower :: Phrase -> Phrase
 pToLower = map sToLower
 
---Converts the input phrase to lower case. The response phrase is unaffected.
+-- Converts the input phrase to lower case. The response phrase is unaffected.
 ppsToLower :: [(Phrase, Phrase)] -> [(Phrase, Phrase)]
 ppsToLower = map (map2 (pToLower, id))
 
---Takes a list of pattern transformations and a phrase as arguments. Returns a transformed phrase.
+-- Takes a list of pattern transformations and a phrase as arguments.
+-- Returns a reflected transformed phrase.
 rulesApply :: [PhrasePair] -> Phrase -> Phrase
 rulesApply transformations phrase
   | result == Nothing    = []
   | otherwise            = try (transformationsApply "*" reflect transformations) phrase
   where result = transformationsApply "*" reflect transformations phrase
 
---"Reflects" words of a phrase, e.g. replaces "me" with "you". If a word has no reflection, it remains unchanged.
+-- "Reflects" words of a phrase, e.g. replaces "me" with "you". If a word has no reflection, it remains unchanged.
 reflect :: Phrase -> Phrase
-reflect = map (flip get reflections)
+reflect = map $ reflectword reflections
+  where
+    reflectword [] k = k
+    reflectword (x:xs) k
+      | fst x == k  = snd x
+      | otherwise   = reflectword xs k
 
---Helper method of reflect. Returns the corresponding word (e.g. "was" -> "were") if it is in the table, or else returns the input argument.
-get :: String -> [(String,String)] -> String
-get k table
-  | length list == 0   = k
-  | otherwise          = snd (head list)
-  where list = [(k',v) | (k',v) <- table, k == k']
 
 reflections =
   [ ("am",     "are"),
@@ -89,7 +92,7 @@ present :: Phrase -> String
 present = unwords
 
 prepare :: String -> Phrase
-prepare = reduce . words . map toLower . filter (not . flip elem ".,:;*!#%&|") 
+prepare = reduce . words . map toLower . filter (not . flip elem ".,:;*!#%&|")
 
 rulesCompile :: [(String, [String])] -> BotBrain
 rulesCompile = map (map2 (words, map words))
@@ -116,9 +119,11 @@ reductions = (map.map2) (words, words)
 reduce :: Phrase -> Phrase
 reduce = reductionsApply reductions
 
+-- Reduces a phrase as much as possible according to the rules above.
+-- This is basically a recursive rulesApply.
 reductionsApply :: [PhrasePair] -> Phrase -> Phrase
-{- TO BE WRITTEN -}
-reductionsApply _ = id
+reductionsApply reductions phrase = fix reduction phrase
+  where reduction = try (transformationsApply "*" id reductions)
 
 
 -------------------------------------------------------
@@ -184,5 +189,5 @@ transformationsApply :: Eq a => a -> ([a] -> [a]) -> [([a], [a])] -> [a] -> Mayb
 transformationsApply _ _ [] _ = Nothing
 transformationsApply w f (x:xs) str
   | transformation == Nothing   = transformationsApply w f xs str
-  | otherwise                   = transformation 
+  | otherwise                   = transformation
   where transformation = transformationApply w f str x
